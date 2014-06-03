@@ -4,6 +4,7 @@ define("COIN_URL", "http://v2ex.com/mission/daily");
 define("GET_COIN_URL", "http://v2ex.com/mission/daily/redeem?once=");
 define("USER_AGENT", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:29.0) Gecko/20100101 Firefox/29.0");
 define("COOKIE_FILE", dirname(__file__)."/v2ex.cookie");
+define("LOG_FILE", dirname(__file__)."/v2ex.log");
 define("U", "username");
 define("P", "password");
 
@@ -21,7 +22,7 @@ function getLoginCode($data){
 	if(preg_match("/value=\"(\d{5})\"\sname=\"once\"/", $data, $matches)){
 		return $matches[1];
 	}else{
-		log("login_code error");
+		v2exLog("login_code error");
 	}
 }
 
@@ -29,13 +30,13 @@ function getCoinCode($data){
 	if(preg_match("/\'\/mission\/daily\/redeem\?once=(\d{5})\'\;/", $data, $matches)){
 		return $matches[1];
 	}else{
-		log("coin_code error");
+		v2exLog("coin_code error");
 	}
 }
 
-function log($data){
+function v2exLog($data){
 	$data = date("Y-m-d")."\t".$data."\r\n";
-	file_put_contents("error_log", $data, FILE_APPEND);
+	file_put_contents(LOG_FILE, $data, FILE_APPEND);
 	exit;
 }
 
@@ -58,7 +59,7 @@ function send($url, $post_data = false, $referer = ""){
 	curl_close($ch);
 	$GLOBALS['error']++;
 	if($data === false){
-		log("error{$GLOBALS['error']}:".curl_error($ch));
+		v2exLog("error{$GLOBALS['error']}:".curl_error($ch));
 	}else{
 		return $data;
 	}
@@ -76,7 +77,7 @@ $coin_code = getCoinCode($coin_html);
 $url = GET_COIN_URL.$coin_code;
 $info_html = send($url);
 if(preg_match("/每日登录奖励已领取/", $info_html)){
-	log("success!");
+	v2exLog("success!");
 }else{
-	log("false!");
+	v2exLog("false!");
 }
