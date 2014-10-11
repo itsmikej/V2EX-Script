@@ -52,9 +52,10 @@ class v2ex_get_coin
         }
         $coinCode = $this->getCoinCode($coinHtml);
         if (!$coinCode) {
+            fwrite(STDOUT, "get coin code failed...\n");
             return false;
         }
-        fwrite(STDOUT, $coinCode ? "get coin...\n" : "get coin failed...\n");
+        fwrite(STDOUT, "get coin...\n");
         $infoHtml = $this->send(self::$get_coin_url . $coinCode);
         if(preg_match("/每日登录奖励已领取/", $infoHtml)){
             fwrite(STDOUT, "ok!\n");
