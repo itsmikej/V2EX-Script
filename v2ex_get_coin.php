@@ -24,7 +24,13 @@ class v2ex_get_coin
 
     public function go($u, $p)
     {
-        $loginCode = $this->getLoginCode($this->send(self::$login_url));
+        if (false === ($loginHtml = $this->send(self::$login_url))) {
+            return false;
+        }
+        $loginCode = $this->getLoginCode($loginHtml);
+        if (!$loginCode) {
+            return false;
+        }
         $this->login($u, $p, $loginCode);
     }
 
@@ -32,20 +38,23 @@ class v2ex_get_coin
     {
         fwrite(STDOUT, "logining...\n");
         $postData = "u=".urlencode($u)."&p=".urlencode($p)."&once=".$loginCode."&next=".urlencode("/");
-        $this->send(self::$login_url, $postData, self::$login_url);
+        if ($this->send(self::$login_url, $postData, self::$login_url) === false) {
+            return false;
+        }
         fwrite(STDOUT, "login success!\n");
         $this->getCoin();
     }
 
     protected function getCoin()
     {
-        $coinCode = $this->getCoinCode($this->send(self::$coin_url));
-        if ($coinCode) {
-            fwrite(STDOUT, "get coin...\n");
-        } else {
-            fwrite(STDOUT, "get coin failed...\n");
-            exit;
+        if (false === ($coinHtml = $this->send(self::$coin_url))) {
+            return false;
         }
+        $coinCode = $this->getCoinCode($coinHtml);
+        if (!$coinCode) {
+            return false;
+        }
+        fwrite(STDOUT, $coinCode ? "get coin...\n" : "get coin failed...\n");
         $infoHtml = $this->send(self::$get_coin_url . $coinCode);
         if(preg_match("/每日登录奖励已领取/", $infoHtml)){
             fwrite(STDOUT, "ok!\n");
@@ -61,20 +70,17 @@ class v2ex_get_coin
         if (preg_match("/value=\"(\d{5})\"\sname=\"once\"/", $data, $matches)) {
             return $matches[1];
         } else {
-            $this->logger("login code error!");
+            return $this->logger("can not find login code!");
         }
-        return true;
     }
 
     protected function getCoinCode($data){
         if (preg_match("/\'\/mission\/daily\/redeem\?once=(\d{5})\'\;/", $data, $matches)) {
             return $matches[1];
         } else {
-            $this->logger("can not find coin code!");
+            return $this->logger("can not find coin code!");
         }
-        return true;
     }
-
 
     static protected $error = 0;
     protected function send($url, $postData='', $referer='')
@@ -97,8 +103,7 @@ class v2ex_get_coin
         curl_close($ch);
         ++ self::$error;
         if ($data === false) {
-            $this->logger('error'. self::$error . ':' . curl_error($ch));
-            return false;
+            return $this->logger('error'. self::$error . ':' . curl_error($ch));
         } else {
             return $data;
         }
@@ -121,7 +126,7 @@ class v2ex_get_coin
     {
         $data = date("Y-m-d H:i:s")."\t".$message."\r\n";
         file_put_contents(__DIR__ . '/v2ex.log', $data, FILE_APPEND);
-        exit;
+        return false;
     }
 
     protected function getCookieFile()
@@ -131,3 +136,4 @@ class v2ex_get_coin
 }
 
 v2ex_get_coin::init()->go("username", "password");
+v2ex_get_coin::init()->go("username1", "password1");
