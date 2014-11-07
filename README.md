@@ -1,4 +1,4 @@
-v2ex
+V2EX-Script
 ====
 * v2ex领取每日登录奖励php脚本
 
