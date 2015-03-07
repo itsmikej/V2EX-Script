@@ -16,7 +16,7 @@ class v2ex_get_coin
     static protected $v2exObj = null;
     static public function init()
     {
-        if (!isset(self::$v2exObj) || !self::$v2exObj instanceof v2ex_get_coin) {
+        if (!isset(self::$v2exObj)) {
             self::$v2exObj = new v2ex_get_coin();
         }
         return self::$v2exObj;
@@ -27,21 +27,26 @@ class v2ex_get_coin
         if (false === ($loginHtml = $this->send(self::$login_url))) {
             return false;
         }
+
         $loginCode = $this->getLoginCode($loginHtml);
         if (!$loginCode) {
             return false;
         }
+
         $this->login($u, $p, $loginCode);
     }
 
     protected function login($u, $p, $loginCode)
     {
         fwrite(STDOUT, "logining...\n");
+
         $postData = "u=".urlencode($u)."&p=".urlencode($p)."&once=".$loginCode."&next=".urlencode("/");
         if ($this->send(self::$login_url, $postData, self::$login_url) === false) {
             return false;
         }
+
         fwrite(STDOUT, "login success!\n");
+
         $this->getCoin();
     }
 
@@ -50,17 +55,22 @@ class v2ex_get_coin
         if (false === ($coinHtml = $this->send(self::$coin_url))) {
             return false;
         }
+
         $coinCode = $this->getCoinCode($coinHtml);
+
         if (!$coinCode) {
             fwrite(STDOUT, "get coin code failed...\n");
             return false;
         }
+
         fwrite(STDOUT, "get coin...\n");
-        $infoHtml = $this->send(self::$get_coin_url . $coinCode);
-        if(preg_match("/每日登录奖励已领取/", $infoHtml)){
+
+        $infoHtml = $this->send(self::$get_coin_url.$coinCode, '', self::$coin_url);
+
+        if (preg_match("/每日登录奖励已领取/", $infoHtml)) {
             fwrite(STDOUT, "ok!\n");
             $this->logger("success!");
-        }else{
+        } else {
             fwrite(STDOUT, "false!\n");
             $this->logger("false!");
         }
@@ -91,18 +101,26 @@ class v2ex_get_coin
         curl_setopt($ch, CURLOPT_HTTPHEADER, $this->getHttpHeader());
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_USERAGENT, self::USER_AGENT);
-        if (!empty($postData) && !empty($referer)) {
+
+        if (!empty($postData)) {
             curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        }
+
+        if (!empty($referer)) {
             curl_setopt($ch, CURLOPT_REFERER, $referer);
         }
+
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->getCookieFile());
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->getCookieFile());
+        
         $data = curl_exec($ch);
         curl_close($ch);
+
         ++ self::$error;
+        
         if ($data === false) {
             return $this->logger('error'. self::$error . ':' . curl_error($ch));
         } else {
