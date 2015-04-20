@@ -117,15 +117,17 @@ class v2ex_get_coin
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->getCookieFile());
         
         $data = curl_exec($ch);
-        curl_close($ch);
 
         ++ self::$error;
         
         if ($data === false) {
-            return $this->logger('error'. self::$error . ':' . curl_error($ch));
+            $ret = $this->logger('error'. self::$error . ':' . curl_error($ch));
         } else {
-            return $data;
+            $ret = $data;
         }
+
+        curl_close($ch);
+        return $ret;
     }
 
     protected function getHttpHeader()
